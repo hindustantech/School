@@ -1,17 +1,21 @@
 import Student from '../Modal/Student.js'; // Adjust path if needed
-
+import mongoose from 'mongoose';
 // Add a new student
 const addStudent = async (req, res) => {
     try {
+        const teacherId = req.user.id || req.user._id;
         const { name, phone, rollno, email } = req.body;
 
-        // Check if all fields are provided
+        console.log("teacherId", teacherId);
+        if (!teacherId) {
+            return res.status(401).json({ success: false, message: 'UnAuthorized' });
+        }
         if (!name || !phone || !rollno || !email) {
             return res.status(400).json({ success: false, message: 'All fields are required' });
         }
 
         // Create new student
-        const student = new Student({ name, phone, rollno, email });
+        const student = new Student({ name, phone, rollno, email, teacherId });
         await student.save();
 
         res.status(201).json({ success: true, message: 'Student added successfully', data: student });
@@ -83,10 +87,52 @@ const getStudent = async (req, res) => {
 
 const getAllStudents = async (req, res) => {
     try {
-        const students = await Student.find(); // Retrieve all students
-        res.status(200).json({ success: true, data: students });
+        const teacherId = req.user.id;
+        console.log("teacherId",teacherId);
+
+        // Validate teacherId
+        if (!teacherId) {
+            return res.status(400).json({
+                success: false,
+                message: 'teacherId is required in the request body'
+            });
+        }
+
+        // Check if teacherId is a valid ObjectId (optional, if using MongoDB)
+        if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid teacherId format'
+            });
+        }
+
+        // Fetch students with the given teacherId and populate teacher details
+        const students = await Student.find({ teacherId })
+
+        // Check if any students were found
+        if (!students || students.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No students found for this teacher'
+            });
+        }
+
+        // Return success response with data
+        res.status(200).json({
+            success: true,
+            message: 'Students retrieved successfully',
+            data: students
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error', error: error.message });
+        // Log the error for debugging (optional)
+        console.error('Error in getAllStudents:', error);
+
+        // Return detailed error response
+        res.status(500).json({
+            success: false,
+            message: 'Server error occurred while fetching students',
+            error: error.message
+        });
     }
 };
 

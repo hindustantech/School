@@ -5,6 +5,10 @@ const studentSchema = new Schema({
         type: String,
         required: true,
     },
+    teacherId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Teacher' // Reference to the Teacher model
+    },
     phone: {
         type: String,
         required: true,
