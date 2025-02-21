@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import Teacher from '../Modal/Teacher.js';
 import jwt from 'jsonwebtoken';
+import T from '../Modal/T.js';
 
 export const Register = async (req, res) => {
     try {
@@ -91,7 +92,7 @@ export const Login = async (req, res) => {
             accessToken,
             refreshToken,
             data: {
-                id:teacher._id,
+                id: teacher._id,
                 name: teacher.name,
                 email: teacher.email
             }
@@ -159,4 +160,42 @@ const generateRefreshToken = (user) => {
         { id: user._id },
         process.env.JWT_REFRESH_SECRET,
     );
+};
+
+
+
+export const AddData = async (req, res) => {
+    try {
+        const { email, name } = req.body;
+
+        // Basic input check
+        if (!email || !name) {
+            return res.status(400).json({ success: false, message: 'Name, email, and password required' });
+        }
+
+
+
+
+
+        // Create new teacher
+        const teacher = new T({
+            email,
+            name,
+        });
+
+
+
+
+        await teacher.save();
+
+        // Send response with tokens
+        res.status(201).json({
+            success: true,
+
+            data: { name: teacher.name, email: teacher.email },
+        });
+    } catch (error) {
+        console.log(error.message)
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
